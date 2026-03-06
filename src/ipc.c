@@ -1,7 +1,7 @@
-#include "eclib/ipc_message.h" // Updated include directive
+#include <eclib/ipc_message.h> // Updated include directive
 #include <string.h>
 #include <unistd.h>
-#include <sys/syscall.h>
+#include <e-comos/syscall.h>
 #include <time.h>
 #include <stdio.h>
 
@@ -26,7 +26,7 @@ int ipc_send_msg(uint32_t type, uint32_t flags, uint32_t receiver_pid,
         memcpy(msg.data, data, msg.data_len);
     }
     
-    // 系统调用发送
+
     return syscall(SYS_IPC_SEND, &msg);
 }
 
@@ -35,7 +35,7 @@ int ipc_receive_msg(struct ipc_message* msg, int timeout_ms) {
         return -1;
     }
     
-    // 系统调用接收
+
     int ret = syscall(SYS_IPC_RECEIVE, msg, timeout_ms);
     
     if (ret >= 0 && msg->timestamp == 0) {
@@ -51,7 +51,7 @@ int ipc_broadcast_msg(uint32_t type, uint32_t flags, uint32_t data_len,
     
     msg.type = type;
     msg.sender_pid = getpid();
-    msg.receiver_pid = 0xFFFFFFFF;  // 广播地址
+    msg.receiver_pid = 0xFFFFFFFF;  
     msg.data_len = (data_len > 256) ? 256 : data_len;
     msg.flags = flags;
     msg.timestamp = time(NULL);
@@ -64,11 +64,11 @@ int ipc_broadcast_msg(uint32_t type, uint32_t flags, uint32_t data_len,
 }
 
 int ipc_do_not_kill_sub(void) {
-    // 系统调用设置标志
+
     int ret = syscall(SYS_IPC_DO_NOT_KILL, 0);
     
     if (ret == 0) {
-        // 发送IPC消息通知PowerOffer
+
         char data[32];
         snprintf(data, sizeof(data), "DO_NOT_KILL:%d", getpid());
         ipc_broadcast_msg(IPC_MSG_DO_NOT_KILL, 0, strlen(data), data);
@@ -78,7 +78,7 @@ int ipc_do_not_kill_sub(void) {
 }
 
 int ipc_do_not_kill_sub_emergency_ok(void) {
-    // 系统调用设置标志（紧急情况下可杀）
+
     int ret = syscall(SYS_IPC_DO_NOT_KILL, 1);
     
     if (ret == 0) {

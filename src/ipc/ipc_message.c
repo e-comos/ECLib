@@ -8,10 +8,10 @@
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  */
-#include "eclib/ipc_message.h"
+#include <eclib/ipc_message.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/syscall.h>
+#include <e-comos/syscall.h>
 #include <time.h>
 #include <stdio.h> // Added for snprintf
 

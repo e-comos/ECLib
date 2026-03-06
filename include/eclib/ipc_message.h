@@ -12,10 +12,10 @@
 #ifndef ECLIB_IPC_MESSAGE_H
 #define ECLIB_IPC_MESSAGE_H
 
-#include "eclib/error.h" // Include centralized error type definition
+#include <eclib/error.h> // Include centralized error type definition
 #include <stdint.h>
 #include <stddef.h>
-
+#include <_type.h> // Include common type definitions
 // IPC message types
 #define IPC_MSG_SHUTDOWN_REQUEST   0x53485554  // "SHUT"
 #define IPC_MSG_EXIT_REQUEST       0x45584954  // "EXIT"

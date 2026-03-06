@@ -4,7 +4,7 @@
 #include <sys/syscall.h>
 #include <time.h>
 
-// 系统调用号
+// System call numbers
 #define SYS_ACQUIRE_CAPABILITY  3001
 #define SYS_RELEASE_CAPABILITY  3002
 #define SYS_VALIDATE_CAPABILITY 3003
@@ -18,7 +18,7 @@ struct capability_token* acquire_capability(uint32_t capabilities,
         return NULL;
     }
     
-    // 准备参数
+    // Options
     char desc_buf[65];
     strncpy(desc_buf, description, 64);
     desc_buf[64] = '\0';

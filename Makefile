@@ -13,14 +13,13 @@ BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 LIB_DIR := lib
 
-CFLAGS ?= -O2 -Wall -Wextra -fPIC -Iinclude
-LDFLAGS ?=
+CFLAGS ?= -O2 -Wall -Wextra -fPIC -Iinclude -I"$(HOME)/kernel/include"
 LDLIBS ?= -pthread
 CFLAGS += -pthread
 
 # set DEBUG=1 to build with -g -O0
 ifeq ($(DEBUG),1)
-CFLAGS := -g -O0 -Wall -Iinclude
+CFLAGS := -g -O0 -Wall -Iinclude -I~/kernel/include # Or your path to kernel headers
 endif
 
 # Add ebts/printkit.c to the source files

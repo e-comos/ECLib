@@ -3,8 +3,9 @@
 #include "eclib/capability.h"
 #include <string.h>
 #include <unistd.h>
-#include <sys/syscall.h>
+#include <e-comos/syscall.h>
 #include <stdio.h> // Added for snprintf
+#include <eclib/service.h>
 
 #define SYS_SHUTDOWN          2001
 #define SYS_REBOOT            2002
@@ -97,7 +98,7 @@ int appendix_s_begin_save(void) {
     ipc_do_not_kill_sub();
     
     // 获取PowerOffer的PID（假设是1000）
-    int poweroffer_pid = 1000;
+    uint32_t poweroffer_pid = eclib_getpid();
     
     // 发送WAIT消息
     char wait_msg[5] = "WAIT";

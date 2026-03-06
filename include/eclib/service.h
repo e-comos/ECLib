@@ -12,7 +12,7 @@
 #define ECLIB_SERVICE_H
 #include <stdint.h>
 #include <stddef.h>
-#include "eclib/error.h" // Ensure eclib_err_t is included
+#include <eclib/error.h> // Ensure eclib_err_t is included
 
 // ---------------------
 // The connted code with service registry
@@ -89,12 +89,12 @@ eclib_err_t eclib_service_unregister(const char* service_name);
 uint32_t eclib_getpid(void);
 
 // 附录S关机保存信息
-#define ServiceSaveInfo     "[Service] 正在保存状态"
-#define ServiceStartInfo    "[Service] 服务启动"
-#define ServiceStopInfo     "[Service] 服务停止"
-#define ServiceErrorInfo    "[Service] 服务错误"
+#define ServiceSaveInfo     "[Service] Saving State"
+#define ServiceStartInfo    "[Service] Start Service"
+#define ServiceStopInfo     "[Service] Stop Service"
+#define ServiceErrorInfo    "[Service] Service Error"
 
-// 服务状态
+// Service State Enum
 enum service_state {
     SERVICE_RUNNING = 0,
     SERVICE_STOPPED,
@@ -102,7 +102,7 @@ enum service_state {
     SERVICE_SHUTDOWN
 };
 
-// 服务信息结构
+// Service information structure
 struct service_info {
     int id;
     char name[64];
@@ -112,15 +112,15 @@ struct service_info {
     unsigned long long last_heartbeat;
 };
 
-// 服务注册/注销
+// Service rehister or unregister
 int service_register(const char* name);
 int service_unregister(int service_id);
 int service_set_state(int service_id, enum service_state state);
 
-// 服务心跳
+// Service heartbeat
 int service_heartbeat(int service_id);
 
-// 服务发现
+// Find service
 int service_find_by_name(const char* name, struct service_info* info);
 int service_list(struct service_info* list, int max_count);
 #endif // ECLIB_SERVICE_H

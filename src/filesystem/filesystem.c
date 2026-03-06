@@ -2,10 +2,10 @@
  * ECLib - E-comOS C Library
  * Copyright (C) 2025 E-comOS Kernel Mode Team & Saladin5101
  */
-#include "eclib/filesystem.h"
-#include "eclib/ipc_message.h"
-#include "eclib/service.h"
-#include "eclib/utils.h"
+#include <eclib/filesystem.h>
+#include <eclib/ipc_message.h>
+#include <eclib/service.h>
+#include <eclib/utils.h>
 
 #define FS_SERVICE_NAME "file_service"
 #define FS_CMD_STAT   0x3001

@@ -8,8 +8,8 @@
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  */
-#include "error.h"
-#include "ipc_message.h"
+#include <eclib/error.h>
+#include <eclib/ipc_message.h>
 #include <stdint.h>
 #include <stddef.h>
 
