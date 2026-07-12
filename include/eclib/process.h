@@ -1,7 +1,7 @@
 /*
  * ECLib - E-comOS C Library
  * Copyright (C) 2025 E-comOS Kernel Mode Team & Saladin5101
- * 
+ *
  * This file is part of ECLib.
  * ECLib is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -12,20 +12,22 @@
 #define ECLIB_PROCESS_H
 
 #include <stdint.h>
-#include "error.h"
 
-// Wait options
 #define ECLIB_WNOHANG 1
 
-// Exit status macros
 #define ECLIB_WIFEXITED(status) (((status) & 0xFF) == 0)
 #define ECLIB_WEXITSTATUS(status) (((status) >> 8) & 0xFF)
 
-int eclib_fork(void);
-int eclib_execve(const char* path, char* const argv[], char* const envp[]);
-int eclib_wait(int* status);
-int eclib_waitpid(int pid, int* status, int options);
-void eclib_exit(int status) __attribute__((noreturn));
-uint32_t eclib_getppid(void);
+int proc_new(const char* mode, uint32_t privilege_mask);
+int proc_setflags(int pid, uint32_t flags);
+int proc_start(int pid, const char* path, char* const argv[], char* const envp[]);
+_Noreturn void proc_terminate(void);
+int proc_kill(int pid);
+int proc_signal_send(int pid, uint32_t signum);
+int proc_getpid(void);
+int proc_getppid(void);
+int waitpid(int pid, int* status, int options);
+int whoami(void);
+int set_privilege(uint32_t mask);
 
 #endif

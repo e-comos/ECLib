@@ -29,12 +29,12 @@ static uint32_t get_file_control_pid(void) {
 // -------------------------------
 eclib_file_t eclib_file_open(const char* filename, uint8_t mode) {
     if (filename == NULL || *filename == '\0') {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return ECLIB_FILE_INVALID;
     }
     uint32_t fc_pid = get_file_control_pid();
     if (fc_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);  // Cannot found service
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);  // Cannot found service
         return ECLIB_FILE_INVALID;
     }
     eclib_file_open_req_t req;
@@ -52,11 +52,11 @@ eclib_file_t eclib_file_open(const char* filename, uint8_t mode) {
         1000
     );
      if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return ECLIB_FILE_INVALID;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return ECLIB_FILE_INVALID;
     }
 
@@ -69,14 +69,14 @@ eclib_file_t eclib_file_open(const char* filename, uint8_t mode) {
 ssize_t eclib_file_read(eclib_file_t file, void* buf, size_t max_len) {
     // Check parameters
     if (file == ECLIB_FILE_INVALID || buf == NULL || max_len == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return -1;
     }
 
     // Get file control service PID
     uint32_t fc_pid = get_file_control_pid();
     if (fc_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return -1;
     }
 
@@ -98,11 +98,11 @@ ssize_t eclib_file_read(eclib_file_t file, void* buf, size_t max_len) {
     );
 
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return -1;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return -1;
     }
 
@@ -115,13 +115,13 @@ ssize_t eclib_file_read(eclib_file_t file, void* buf, size_t max_len) {
 ssize_t eclib_file_write(eclib_file_t file, const void* data, size_t len) {
     // Check parameters
     if (file == ECLIB_FILE_INVALID || data == NULL || len == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return -1;
     }
     // Get PID
     uint32_t fc_pid = get_file_control_pid();
     if (fc_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return -1;
     }
     // Build write request
@@ -141,11 +141,11 @@ ssize_t eclib_file_write(eclib_file_t file, const void* data, size_t len) {
     );
 
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return -1;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return -1;
     }
     return (ssize_t)resp.actual_len; // Return actual written length
@@ -156,13 +156,13 @@ ssize_t eclib_file_write(eclib_file_t file, const void* data, size_t len) {
 eclib_err_t eclib_file_close(eclib_file_t file) {
     // Check parameters
     if (file == ECLIB_FILE_INVALID) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return ECLIB_ECLIB_INVALID_PARAMETER;
     }
     // Get PID
     uint32_t fc_pid = get_file_control_pid();
     if (fc_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return ECLIB_ECLIB_CANNOT_FIND_MODULE;
     }
     // Build close request
@@ -179,11 +179,11 @@ eclib_err_t eclib_file_close(eclib_file_t file) {
         1000
     );
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return err;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return resp.err;
     }
     return ECLIB_OK;
@@ -194,14 +194,14 @@ eclib_err_t eclib_file_close(eclib_file_t file) {
 ssize_t eclib_file_get_length(eclib_file_t file, const char* filename) {
     // Check parameters
     if (file == ECLIB_FILE_INVALID && (filename == NULL || *filename == '\0')) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return -1;
     }
 
     // Get file_control service PID
     uint32_t fc_pid = get_file_control_pid();
     if (fc_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return -1;
     }
 
@@ -227,11 +227,11 @@ ssize_t eclib_file_get_length(eclib_file_t file, const char* filename) {
     );
 
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return -1;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return -1;
     }
 

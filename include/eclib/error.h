@@ -91,10 +91,19 @@
 #define ECLIB_ECLIB_DEPENDENCY_VERSION_MISMATCH 0x108 // Dependency version mismatch (Incompatible version of a required dependency detected!)
 #define ECLIB_ECLIB_CANNOT_FIND_RESOURCE 0x109 // Cannot find resource (Required resource file missing or corrupted!)
 #define ECLIB_ECLIB_INSUFFICIENT_PERMISSIONS 0x10A // Insufficient permissions (Operation requires higher privileges!)
+// =========== PROCESS ERRORS MESSAGES ===========
+// ERROR CODE FROM -4006 TO -4000
+#define ECLIB_PROCESS_NOT_FOUND         -4000 // No such process (ESRCH equivalent)
+#define ECLIB_PROCESS_INVALID_PARAM     -4001 // Invalid argument (EINVAL equivalent)
+#define ECLIB_PROCESS_PERMISSION_DENIED -4002 // Caller lacks required ULA privilege (EPERM equivalent)
+#define ECLIB_PROCESS_NO_CHILD          -4003 // No child process to wait on (ECHILD equivalent)
+#define ECLIB_PROCESS_EXEC_FORMAT       -4004 // Executable format error (ENOEXEC equivalent)
+#define ECLIB_PROCESS_NOT_FOUND_EXE     -4005 // Executable path not found (ENOENT equivalent)
+#define ECLIB_PROCESS_ALREADY_STARTED   -4006 // proc_start called twice on same PID
 
 typedef int eclib_err_t; // Define eclib_err_t as an integer type for error codes
 
 // Error handling functions
-int eclib_set_last_err(int err);
-int eclib_get_last_err(void);
+int set_last_err(int err);
+int get_last_err(void);
 #endif

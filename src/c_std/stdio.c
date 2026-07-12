@@ -1,161 +1,174 @@
 /**
  * ECLib - E-comOS C Library
- * Copyright (C) 2026 Saladin5101
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
- * USA
- */
-// C99 Standard 7.23 Input/output <stdio.h> Implementation
-// For E-comOS v0.1
-// Core terminal I/O fully implemented (adapts to kernel's parameterized putchar function)
-// Dependencies: Kernel printkit & standard headers
-
-#include <stdio.h>
+// Re-implemented C99 stdio using SLFD as the low-level interface.
+/* Include project stdio explicitly to ensure the project's FILE type is used */
+#include "../../include/stdio.h"
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
 
-// -------------------------- Import Kernel Printkit (kernel-provided parameterized putchar) --------------------------
-// Import kernel's putchar function with color parameter
-#include <e-comos/printkit/print.h>
+#include "slfd/io.h"
+#include "slfd/syscall.h"
 
-// -------------------------- Default Terminal Color (for kernel's parameterized putchar, C99 interface compliant) --------------------------
-// Default terminal text color (E-comOS v0.1: white text on black background, standard VGA color)
-// Modify this value to change the default terminal output color as needed
-#define DEFAULT_TERMINAL_COLOR 0x07 // Standard VGA color: 0=black background, 7=white foreground
+/* Simple FILE table to manage open streams (C stdlib-compatible facade).
+ * Implementation notes:
+ * - FILE.fd holds the SLFD fid_t (cast to int)
+ * - Standard streams (stdin/stdout/stderr) map to fds 0/1/2
+ */
+static FILE file_table[FOPEN_MAX];
+static int file_used[FOPEN_MAX];
 
-// -------------------------- Global Stream Instances (C99 Required) --------------------------
-// Initialize standard streams for terminal I/O (v0.1: no buffer, terminal-only)
-// stdin: keyboard input (fd=0), stdout/stderr: terminal output (fd=1/fd=2)
-static FILE _stdin = {
-    .fd = 0,
-    .buf = NULL,
-    .buf_size = BUFSIZ,
-    .error = 0,
-    .eof = 0
-};
+static FILE _stdin = { .fd = 0, .buf = NULL, .buf_size = BUFSIZ, .error = 0, .eof = 0 };
+static FILE _stdout = { .fd = 1, .buf = NULL, .buf_size = BUFSIZ, .error = 0, .eof = 0 };
+static FILE _stderr = { .fd = 2, .buf = NULL, .buf_size = BUFSIZ, .error = 0, .eof = 0 };
 
-static FILE _stdout = {
-    .fd = 1,
-    .buf = NULL,
-    .buf_size = BUFSIZ,
-    .error = 0,
-    .eof = 0
-};
-
-static FILE _stderr = {
-    .fd = 2,
-    .buf = NULL,
-    .buf_size = BUFSIZ,
-    .error = 0,
-    .eof = 0
-};
-
-// Expose global stream pointers (C99 compliant, linked to static instances above)
 FILE* stdin = &_stdin;
 FILE* stdout = &_stdout;
 FILE* stderr = &_stderr;
 
-// -------------------------- User-Provided Keyboard Driver Prototype (to be implemented by user) --------------------------
-// NOTE: Replace this with your actual kernel keyboard driver function to read a character
-// Return: Read ASCII character on success, (char)EOF on error or no available input
-char terminal_getchar(void);
-
-// -------------------------- Core Implemented Functions (Terminal I/O, C99 Compliant) --------------------------
-// C99 7.23.5: getchar() - Reads a single character from stdin (keyboard)
-int getchar(void) {
-    // Validate standard input stream
-    if (stdin == NULL) {
-        return EOF;
+/* Helper: allocate FILE slot (skip 0/1/2 reserved) */
+static FILE* file_alloc(void) {
+    for (int i = 3; i < FOPEN_MAX; i++) {
+        if (!file_used[i]) {
+            file_used[i] = 1;
+            file_table[i].fd = -1;
+            file_table[i].buf = NULL;
+            file_table[i].buf_size = BUFSIZ;
+            file_table[i].error = 0;
+            file_table[i].eof = 0;
+            return &file_table[i];
+        }
     }
-
-    // Reset stream error flag before performing input operation (C99 compliant)
-    stdin->error = 0;
-
-    // Call user-provided keyboard driver to read a character
-    char read_c = terminal_getchar();
-
-    // Handle EOF/error condition
-    if (read_c == (char)EOF) {
-        stdin->eof = 1;       // Set EOF flag for the stream
-        stdin->error = 1;     // Set error flag for the stream
-        return EOF;
-    }
-
-    // Clear EOF flag on successful character read
-    stdin->eof = 0;
-
-    // Return the read character as int (C99 required behavior for character I/O)
-    return (int)read_c;
+    return NULL;
 }
 
-// C99 7.23.5: puts() - Writes a null-terminated string to stdout, followed by a newline
+static void file_free(FILE* f) {
+    if (!f) return;
+    int idx = f - file_table;
+    if (idx >= 0 && idx < FOPEN_MAX) file_used[idx] = 0;
+}
+
+/* fopen/fclose */
+FILE* fopen(const char* filename, const char* mode) {
+    if (!filename || !mode) return NULL;
+    FILE* f = file_alloc();
+    if (!f) return NULL;
+    fid_t fid = open("f", mode, filename);
+    if (fid < 0) {
+        file_free(f);
+        return NULL;
+    }
+    f->fd = (int)fid;
+    return f;
+}
+
+int fclose(FILE* stream) {
+    if (!stream) return EOF;
+    int r = close("f", (fid_t)stream->fd);
+    file_free(stream);
+    return (r == 0) ? 0 : EOF;
+}
+
+/* fread/fwrite */
+size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream) {
+    if (!ptr || !stream) return 0;
+    size_t total = size * nmemb;
+    ssize_t r = read("f", (fid_t)stream->fd, ptr, total);
+    if (r < 0) {
+        stream->error = 1;
+        return 0;
+    }
+    return (size_t)r / size;
+}
+
+size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream) {
+    if (!ptr || !stream) return 0;
+    size_t total = size * nmemb;
+    /* Prefer direct syscall for stdout/stderr to avoid file service overhead */
+    if (stream == stdout || stream == stderr) {
+        ssize_t r = slfd_sys_write(stream->fd, ptr, total);
+        if (r < 0) { stream->error = 1; return 0; }
+        return (size_t)r / size;
+    }
+    ssize_t r = write("f", (fid_t)stream->fd, ptr, total);
+    if (r < 0) { stream->error = 1; return 0; }
+    return (size_t)r / size;
+}
+
+/* putchar/puts/fputc/putc */
+int fputc(int c, FILE* stream) {
+    if (!stream) return EOF;
+    char ch = (char)c;
+    ssize_t r;
+    if (stream == stdout || stream == stderr) r = slfd_sys_write(stream->fd, &ch, 1);
+    else r = write("f", (fid_t)stream->fd, &ch, 1);
+    if (r < 0) { stream->error = 1; return EOF; }
+    return (int)ch;
+}
+
+int putc(int c, FILE* stream) { return fputc(c, stream); }
+
+int putchar(int c) { return fputc(c, stdout); }
+
 int puts(const char* s) {
-    // Validate input string and standard output stream
-    if (s == NULL || stdout == NULL) {
-        if (stdout != NULL) {
-            stdout->error = 1; // Set error flag if stream is valid but string is NULL
-        }
-        return EOF;
-    }
-
-    // Reset stream error flag before performing output operation (C99 compliant)
-    stdout->error = 0;
-
-    // Traverse the null-terminated string and print each character (with default terminal color)
-    const char* str_ptr = s;
-    while (*str_ptr != '\0') {
-        // Call kernel's putchar with default terminal color (adapt to kernel's parameterized putchar)
-        kputchar(*str_ptr, DEFAULT_TERMINAL_COLOR);
-        str_ptr++;
-    }
-
-    // Append mandatory newline character (C99 required behavior for puts())
-    kputchar('\n', DEFAULT_TERMINAL_COLOR);
-
-    // Return non-negative value to indicate success (C99 compliant; 0 = success for E-comOS v0.1)
+    if (!s) return EOF;
+    size_t len = strlen(s);
+    ssize_t r = slfd_sys_write(stdout->fd, s, len);
+    if (r < 0) { stdout->error = 1; return EOF; }
+    /* write newline */
+    char nl = '\n';
+    slfd_sys_write(stdout->fd, &nl, 1);
     return 0;
 }
 
-// C99 7.23.5: putchar() - Writes a single character to stdout
-int putchar(int c) {
-    // Validate standard output stream
-    if (stdout == NULL) {
-        return EOF;
-    }
-
-    // Reset stream error flag before performing output operation (C99 compliant)
-    stdout->error = 0;
-
-    // Convert int argument to char (C99 allows non-ASCII values, truncate to 8-bit ASCII)
-    char print_c = (char)c;
-
-    // Call kernel's putchar with default terminal color (adapt to kernel's parameterized putchar)
-    kputchar(print_c, DEFAULT_TERMINAL_COLOR);
-
-    // Return the printed character as int (C99 required behavior for putchar())
-    return c;
+/* fgetc/getc/getchar (basic implementations using slfd_sys_read for stdin) */
+int fgetc(FILE* stream) {
+    if (!stream) return EOF;
+    char ch;
+    ssize_t r;
+    if (stream == stdin) r = slfd_sys_read(stream->fd, &ch, 1);
+    else r = read("f", (fid_t)stream->fd, &ch, 1);
+    if (r <= 0) { stream->eof = 1; stream->error = (r<0); return EOF; }
+    return (int)(unsigned char)ch;
 }
 
+int getc(FILE* stream) { return fgetc(stream); }
 
-// -------------------------- Stub Functions (C99 Required, Future Extension) --------------------------
-// NOTE: All stubs return valid C99 error values to avoid link errors.
-// - `...` denotes "variable arguments" (variadic functions, C99 required for formatted I/O).
-// - No need to process variable arguments in stubs; reserve for future implementation with <stdarg.h>.
-// Replace with actual implementation when extending E-comOS (file system, formatted I/O, etc.)
+int getchar(void) { return fgetc(stdin); }
 
-// 7.23.4 Formatted I/O Stubs (variadic functions, C99 required)
+/* fseek/ftell (use io_seek shim) */
+int fseek(FILE* stream, long int offset, int whence) {
+    if (!stream) return EOF;
+    off_t r = io_seek("f", (fid_t)stream->fd, (off_t)offset, whence);
+    if (r < 0) { stream->error = 1; return EOF; }
+    return 0;
+}
+
+long int ftell(FILE* stream) {
+    if (!stream) return -1;
+    /* Seek with 0, SEEK_CUR to get position */
+    off_t pos = io_seek("f", (fid_t)stream->fd, 0, SEEK_CUR);
+    if (pos < 0) { stream->error = 1; return -1; }
+    return (long)pos;
+}
+
+void rewind(FILE* stream) { if (stream) fseek(stream, 0, SEEK_SET); }
+
+int fgetpos(FILE* stream, fpos_t* pos) { if (!stream||!pos) return EOF; long v = ftell(stream); if (v<0) return EOF; *pos = (fpos_t)v; return 0; }
+int fsetpos(FILE* stream, const fpos_t* pos) { if (!stream||!pos) return EOF; return fseek(stream, (long)*pos, SEEK_SET); }
+
+/* fflush stub (no buffering implemented) */
+int fflush(FILE *stream) { (void)stream; return 0; }
+
+/* error handling */
+void clearerr(FILE* stream) { if (stream) { stream->error = 0; stream->eof = 0; } }
+int feof(FILE* stream) { return stream ? stream->eof : 0; }
+int ferror(FILE* stream) { return stream ? stream->error : 0; }
+
+void perror(const char* s) { (void)s; /* Could map to strerror and write to stderr */ }
+
+/* Other stubs left as simple placeholders (formatted I/O left unimplemented for brevity) */
 int printf(const char* format, ...) { (void)format; return EOF; }
 int fprintf(FILE* stream, const char* format, ...) { (void)stream; (void)format; return EOF; }
 int sprintf(char* s, const char* format, ...) { (void)s; (void)format; return EOF; }
@@ -164,20 +177,10 @@ int scanf(const char* format, ...) { (void)format; return EOF; }
 int fscanf(FILE* stream, const char* format, ...) { (void)stream; (void)format; return EOF; }
 int sscanf(const char* s, const char* format, ...) { (void)s; (void)format; return EOF; }
 
-// 7.23.5 Character I/O Stubs (additional)
-int fgetc(FILE* stream) { (void)stream; return EOF; }
-int getc(FILE* stream) { (void)stream; return EOF; }
-int fputc(int c, FILE* stream) { (void)c; (void)stream; return EOF; }
-int putc(int c, FILE* stream) { (void)c; (void)stream; return EOF; }
 char* fgets(char* s, int n, FILE* stream) { (void)s; (void)n; (void)stream; return NULL; }
+int fputc(int c, FILE* stream) { return fputc(c, stream); }
+int putc_unlocked(int c, FILE* stream) { return fputc(c, stream); }
 
-// 7.23.6 Direct I/O Stubs
-size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream) { (void)ptr; (void)size; (void)nmemb; (void)stream; return 0; }
-size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream) { (void)ptr; (void)size; (void)nmemb; (void)stream; return 0; }
-
-// 7.23.7 File Positioning Stubs
-int fseek(FILE* stream, long int offset, int whence) { (void)stream; (void)offset; (void)whence; return EOF; }
-long int ftell(FILE* stream) { (void)stream; return -1; }
 void rewind(FILE* stream) { (void)stream; }
 int fgetpos(FILE* stream, fpos_t* pos) { (void)stream; (void)pos; return EOF; }
 int fsetpos(FILE* stream, const fpos_t* pos) { (void)stream; (void)pos; return EOF; }

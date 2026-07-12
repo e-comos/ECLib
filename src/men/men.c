@@ -51,13 +51,13 @@ static uint32_t get_memory_manager_pid(void) {
 // Memory Manager
 void* eclib_malloc(size_t size) {
     if (size == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return NULL;
     }
 
     uint32_t mem_pid = get_memory_manager_pid();
     if (mem_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return NULL;
     }
 
@@ -73,11 +73,11 @@ void* eclib_malloc(size_t size) {
     );
 
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return NULL;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return NULL;
     }
 
@@ -89,7 +89,7 @@ void eclib_free(void* addr) {
 
     uint32_t mem_pid = get_memory_manager_pid();
     if (mem_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return;
     }
 
@@ -103,20 +103,20 @@ void eclib_free(void* addr) {
     );
     
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
     }
 }
 
 void* eclib_calloc(size_t nmemb, size_t size) {
     if (nmemb == 0 || size == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return NULL;
     }
     
     // Check for multiplication overflow
     size_t total_size = nmemb * size;
     if (size != 0 && total_size / size != nmemb) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_ALLOCATE_MEMORY);
+        set_last_err(ECLIB_ECLIB_CANNOT_ALLOCATE_MEMORY);
         return NULL;
     }
 
@@ -138,7 +138,7 @@ void* eclib_realloc(void* ptr, size_t size) {
 
     uint32_t mem_pid = get_memory_manager_pid();
     if (mem_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return NULL;
     }
 
@@ -157,11 +157,11 @@ void* eclib_realloc(void* ptr, size_t size) {
     );
 
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return NULL;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return NULL;
     }
 

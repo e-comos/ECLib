@@ -12,13 +12,21 @@ extern int errno;
 // -------------------------- C99 Standard Error Codes (Required, Minimal Set) --------------------------
 // Basic standard error codes for E-comOS v0.1 (expand as needed for full C99 compliance)
 #define EOK        0   // No error (success, non-standard but convenient for E-comOS)
-#define EINVAL     1   // Invalid argument (invalid parameter passed to function)
-#define ENOMEM     2   // Out of memory (insufficient memory to complete operation)
-#define ENOENT     3   // No such file or directory (requested resource does not exist)
-#define EIO        4   // Input/output error (failed to read/write from/to device/resource)
-#define EBADF      5   // Bad file descriptor (invalid or closed file descriptor used)
-#define EAGAIN     6   // Resource temporarily unavailable (try again later)
-#define EACCES     7   // Permission denied (insufficient privileges to access resource)
+#define EPERM      1   // Operation not permitted (insufficient privilege for the requested operation)
+#define ENOENT     2   // No such file or directory (requested resource does not exist)
+#define ESRCH      3   // No such process (target pid does not exist)
+#define EINTR      4   // Interrupted system call
+#define EIO        5   // Input/output error (failed to read/write from/to device/resource)
+#define ENXIO      6   // No such device or address
+#define E2BIG      7   // Argument list too long
+#define ENOEXEC    8   // Exec format error (executable image is invalid or unsupported)
+#define EBADF      9   // Bad file descriptor (invalid or closed file descriptor used)
+#define ECHILD     10  // No child process (waitpid target has no matching child)
+#define EAGAIN     11  // Resource temporarily unavailable (try again later)
+#define ENOMEM     12  // Out of memory (insufficient memory to complete operation)
+#define EACCES     13  // Permission denied (insufficient privileges to access resource)
+#define EFAULT     14  // Bad address (invalid pointer passed to function)
+#define EINVAL     15  // Invalid argument (invalid parameter passed to function)
 
 // -------------------------- E-comOS Extended Error Codes (Custom, for Kernel/Drivers) --------------------------
 // Additional error codes tailored for E-comOS kernel and device drivers (expand as needed)

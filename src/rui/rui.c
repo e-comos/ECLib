@@ -23,7 +23,7 @@ eclib_err_t eclib_rui_init(void) {
 
     g_rui_pid = eclib_service_lookup("rui_service");
     if (g_rui_pid == 0) {
-        return eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        return set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
     }
     return ECLIB_OK;
 }
@@ -34,7 +34,7 @@ uint32_t eclib_rui_create_window(const rui_point_t* pos, const rui_size_t* size,
     // Check initialization and parameters
     if (g_rui_pid == 0 && eclib_rui_init() != ECLIB_OK) return 0;
     if (!pos || !size || !title || !bg_color) {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return 0;
     }
 
@@ -57,7 +57,7 @@ uint32_t eclib_rui_create_window(const rui_point_t* pos, const rui_size_t* size,
     );
 
     if (err != ECLIB_OK || resp.err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return 0;
     }
     return resp.window_id; // Return window ID
@@ -68,7 +68,7 @@ eclib_err_t eclib_rui_draw_text(uint32_t window_id, const rui_point_t* pos,
                                const char* text, const rui_color_t* color, uint8_t font_size) {
     if (g_rui_pid == 0 && eclib_rui_init() != ECLIB_OK) return ECLIB_ECLIB_CANNOT_FIND_MODULE;
     if (!pos || !text || !color || window_id == 0) {
-        return eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        return set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
     }
 
     rui_draw_text_req_t req;
@@ -91,7 +91,7 @@ eclib_err_t eclib_rui_draw_text(uint32_t window_id, const rui_point_t* pos,
 // 4. Wait for events (blocking to receive asynchronous events sent by RUI)
 eclib_err_t eclib_rui_wait_event(rui_event_t* event, uint32_t timeout_ms) {
     if (g_rui_pid == 0 && eclib_rui_init() != ECLIB_OK) return ECLIB_ECLIB_CANNOT_FIND_MODULE;
-    if (!event) return eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+    if (!event) return set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
 
     // Receive "event notification" type messages sent by RUI (custom message type needs to be defined in IPC)
     #define ECLIB_IPC_MSG_TYPE_RUI_EVENT 0x2001

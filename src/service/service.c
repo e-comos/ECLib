@@ -21,12 +21,12 @@ static uint32_t get_registry_pid(void) {
 // ---------------------
 uint32_t eclib_service_lookup(const char* service_name) {
     if (service_name == NULL || *service_name == '\0') {
-        eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
         return 0;
     }
     uint32_t registry_pid = get_registry_pid();
     if (registry_pid == 0) {
-        eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
         return 0;
     }
     service_lookup_req_t req;
@@ -43,11 +43,11 @@ uint32_t eclib_service_lookup(const char* service_name) {
         1000
     );
     if (err != ECLIB_OK) {
-        eclib_set_last_err(err);
+        set_last_err(err);
         return 0;
     }
     if (resp.err != ECLIB_OK) {
-        eclib_set_last_err(resp.err);
+        set_last_err(resp.err);
         return 0;
     }
     return resp.service_pid;
@@ -57,11 +57,11 @@ uint32_t eclib_service_lookup(const char* service_name) {
 // ---------------------
 eclib_err_t eclib_service_register(const char* service_name) {
     if (service_name == NULL || *service_name == '\0') {
-        return eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        return set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
     }
     uint32_t registry_pid = get_registry_pid();
     if (registry_pid == 0) {
-        return eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        return set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
     }
     service_register_req_t req;
     eclib_strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
@@ -77,10 +77,10 @@ eclib_err_t eclib_service_register(const char* service_name) {
         1000
     );
     if (err != ECLIB_OK) {
-        return eclib_set_last_err(err);
+        return set_last_err(err);
     }
     if (resp.err != ECLIB_OK) {
-        return eclib_set_last_err(resp.err);
+        return set_last_err(resp.err);
     }
     return ECLIB_OK;
 }
@@ -89,11 +89,11 @@ eclib_err_t eclib_service_register(const char* service_name) {
 // ---------------------
 eclib_err_t eclib_service_unregister(const char* service_name) {
     if (service_name == NULL || *service_name == '\0') {
-        return eclib_set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
+        return set_last_err(ECLIB_ECLIB_INVALID_PARAMETER);
     }
     uint32_t registry_pid = get_registry_pid();
     if (registry_pid == 0) {
-        return eclib_set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
+        return set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
     }
     service_unregister_req_t req;
     eclib_strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
@@ -108,7 +108,7 @@ eclib_err_t eclib_service_unregister(const char* service_name) {
         500
     );
     if (err!=ECLIB_OK){
-        return eclib_set_last_err(err);
+        return set_last_err(err);
     }
     return resp.err;
 }
