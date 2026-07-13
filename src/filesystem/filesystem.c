@@ -5,7 +5,7 @@
 #include <eclib/filesystem.h>
 #include <eclib/ipc_message.h>
 #include <eclib/service.h>
-#include <eclib/utils.h>
+#include <string.h>
 
 #define FS_SERVICE_NAME "file_service"
 #define FS_CMD_STAT   0x3001
@@ -41,7 +41,7 @@ int eclib_stat(const char* path, eclib_stat_t* buf) {
     if (!service_pid) return -1;
     
     fs_path_req_t req = {0};
-    eclib_strncpy(req.path, path, 255);
+    strncpy(req.path, path, 255);
     
     stat_resp_t resp;
     size_t resp_len = sizeof(resp);
@@ -63,7 +63,7 @@ int eclib_access(const char* path, int mode) {
         char path[256];
         int mode;
     } req = {0};
-    eclib_strncpy(req.path, path, 255);
+    strncpy(req.path, path, 255);
     req.mode = mode;
     
     fs_resp_t resp;
@@ -82,7 +82,7 @@ int eclib_unlink(const char* path) {
     if (!service_pid) return -1;
     
     fs_path_req_t req = {0};
-    eclib_strncpy(req.path, path, 255);
+    strncpy(req.path, path, 255);
     
     fs_resp_t resp;
     size_t resp_len = sizeof(resp);
@@ -100,7 +100,7 @@ int eclib_chdir(const char* path) {
     if (!service_pid) return -1;
     
     fs_path_req_t req = {0};
-    eclib_strncpy(req.path, path, 255);
+    strncpy(req.path, path, 255);
     
     fs_resp_t resp;
     size_t resp_len = sizeof(resp);
@@ -127,7 +127,7 @@ char* eclib_getcwd(char* buf, size_t size) {
     }
     
     if (buf && size > 0) {
-        eclib_strncpy(buf, resp.cwd, size - 1);
+        strncpy(buf, resp.cwd, size - 1);
         buf[size - 1] = '\0';
         return buf;
     }

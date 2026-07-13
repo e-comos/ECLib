@@ -217,7 +217,7 @@ typedef struct ipc_message {
 \end{lstlisting}
 
 \subsection{Error Handling}
-Functions return an integer (\texttt{int} or \texttt{ssize\_t}). Negative values indicate an error; the absolute value is one of the error codes defined in Section~\ref{sec:errors}. Non‑negative indicates success (or positive data like PID, \texttt{fid\_t}, bytes transferred). No global \texttt{errno} is defined; callers must check the return value directly.
+Functions return an integer (\texttt{int} or \texttt{ssize\_t}). Negative values indicate an error; the absolute value is one of the error codes defined in Section~\ref{sec:errors}. Non‑negative indicates success (or positive data like PID, \texttt{fid\_t}, bytes transferred). On failure, the global \texttt{errno} is also set to the absolute value of the error code, allowing use of standard error-checking idioms. Callers may check either the return value or \texttt{errno}.
 
 \subsection{Conventions}
 \begin{itemize}
@@ -371,9 +371,9 @@ Requires \texttt{hlud} authorization. Sets process privilege mask.
 
 \section{Memory Management}
 
-\subsection{mm\_alloc\_pages}
+\subsection{page\_malloc}
 \begin{lstlisting}
-void *mm_alloc_pages(uint32_t count);
+void *page_malloc(uint32_t count);
 \end{lstlisting}
 
 \subsubsection{Description}
@@ -393,13 +393,13 @@ Success: non-NULL virtual address. Failure: \texttt{NULL}.
 Lowest-level memory primitive for DMA and page allocators. Zero-fill prevents information leaks.
 
 \subsubsection{Changelog}
-1.0 introduced; 5.0 added \texttt{PROC\_MEMORY} requirement.
+1.0 introduced; 5.0 added \texttt{PROC\_MEMORY} requirement; 10.2 renamed to \texttt{page\_malloc}/\texttt{page\_mfree}.
 
-\subsection{mm\_free\_pages}
+\subsection{page\_mfree}
 \begin{lstlisting}
-void mm_free_pages(void *pages, uint32_t count);
+void page_mfree(void *pages, uint32_t count);
 \end{lstlisting}
-Frees pages allocated with \texttt{mm\_alloc\_pages}. Behaviour undefined if parameters mismatch.
+Frees pages allocated with \texttt{page\_malloc}. Behaviour undefined if parameters mismatch.
 
 \subsection{shm\_open}
 \begin{lstlisting}
@@ -975,8 +975,8 @@ see \S\ref{app:syscalls}.2.
 \hline
 \texttt{\detokenize{sys_pcb_alloc}} & Allocate a PCB slot and PID; does not load or start execution. Used internally by the process server. \\
 \texttt{\detokenize{sys_pcb_free}} & Release a PCB slot. Used internally by the process server. \\
-\texttt{sys\_mm\_alloc\_pages} & Allocate physical pages. \\
-\texttt{sys\_mm\_free\_pages} & Free pages. \\
+\texttt{sys\_mm\_alloc\_pages} & Allocate physical pages (backing \texttt{page\_malloc}). \\
+\texttt{sys\_mm\_free\_pages} & Free pages (backing \texttt{page\_mfree}). \\
 \texttt{sys\_shm\_open} & Open shared memory. \\
 \texttt{sys\_shm\_unlink} & Remove shared memory. \\
 \texttt{sys\_ipc\_send} & Send IPC message. \\

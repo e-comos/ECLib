@@ -11,7 +11,7 @@
 #include "eclib/service.h"
 #include "eclib/ipc_message.h" // Updated include directive
 #include "eclib/error.h"
-#include "eclib/utils.h"
+#include <string.h>
 #include <stdint.h>
 static uint32_t get_registry_pid(void) {
     return 1;
@@ -31,7 +31,7 @@ uint32_t eclib_service_lookup(const char* service_name) {
     }
     service_lookup_req_t req;
 
-    eclib_strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
+    strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
     req.service_name[sizeof(req.service_name)-1] = '\0';
     service_lookup_resp_t resp;
     size_t resp_len = sizeof(resp);
@@ -64,7 +64,7 @@ eclib_err_t eclib_service_register(const char* service_name) {
         return set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
     }
     service_register_req_t req;
-    eclib_strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
+    strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
     req.service_name[sizeof(req.service_name)-1] = '\0';
     req.pid = eclib_getpid();
     service_register_resp_t resp;
@@ -96,7 +96,7 @@ eclib_err_t eclib_service_unregister(const char* service_name) {
         return set_last_err(ECLIB_ECLIB_CANNOT_FIND_MODULE);
     }
     service_unregister_req_t req;
-    eclib_strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
+    strncpy(req.service_name, service_name, sizeof(req.service_name)-1);
     req.service_name[sizeof(req.service_name)-1] = '\0';
     service_unregister_resp_t resp;
     size_t resp_len = sizeof(resp);

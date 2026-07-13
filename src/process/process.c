@@ -5,7 +5,7 @@
 #include <eclib/process.h>
 #include <eclib/ipc_message.h>
 #include <eclib/service.h>
-#include <eclib/utils.h>
+#include <string.h>
 #include <eclib/error.h>
 #include <errno.h>
 
@@ -147,22 +147,22 @@ int proc_start(int pid, const char* path, char* const argv[], char* const envp[]
 
     start_req_t req = {0};
     req.pid = pid;
-    eclib_strncpy(req.path, path, 255);
+    strncpy(req.path, path, 255);
 
     char* p = req.argv_data;
     for (int i = 0; argv && argv[i]; i++) {
-        size_t len = eclib_strlen(argv[i]);
+        size_t len = strlen(argv[i]);
         if ((size_t)(p - req.argv_data) + len + 1 < sizeof(req.argv_data)) {
-            eclib_memcpy(p, argv[i], len + 1);
+            memcpy(p, argv[i], len + 1);
             p += len + 1;
         }
     }
 
     p = req.envp_data;
     for (int i = 0; envp && envp[i]; i++) {
-        size_t len = eclib_strlen(envp[i]);
+        size_t len = strlen(envp[i]);
         if ((size_t)(p - req.envp_data) + len + 1 < sizeof(req.envp_data)) {
-            eclib_memcpy(p, envp[i], len + 1);
+            memcpy(p, envp[i], len + 1);
             p += len + 1;
         }
     }

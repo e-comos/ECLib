@@ -16,7 +16,7 @@
 
 // Add missing declarations
 uint32_t eclib_service_lookup(const char* service_name);
-void eclib_strncpy(char* dest, const char* src, size_t n);
+void strncpy(char* dest, const char* src, size_t n);
 
 // Removed conflicting declaration of ipc_call_sync
 // Ensure the correct declaration from ipc_message.h is used.
@@ -38,7 +38,7 @@ eclib_file_t eclib_file_open(const char* filename, uint8_t mode) {
         return ECLIB_FILE_INVALID;
     }
     eclib_file_open_req_t req;
-    eclib_strncpy(req.filename, filename, sizeof(req.filename)-1);
+    strncpy(req.filename, filename, sizeof(req.filename)-1);
     req.filename[sizeof(req.filename)-1] = '\0';  // Ensure null-termination
     req.mode = mode;
     // Send IPC message to file control service
@@ -209,7 +209,7 @@ ssize_t eclib_file_get_length(eclib_file_t file, const char* filename) {
     eclib_file_get_len_req_t req;
     req.file = file;
     if (filename != NULL) {
-        eclib_strncpy(req.filename, filename, sizeof(req.filename)-1);
+        strncpy(req.filename, filename, sizeof(req.filename)-1);
         req.filename[sizeof(req.filename)-1] = '\0';
     } else {
         req.filename[0] = '\0';  // If filename is NULL, set to empty string

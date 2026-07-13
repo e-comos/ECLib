@@ -1,35 +1,34 @@
 # Makefile for ECLib
 # Builds libeclib.a (static) and optionally libeclib.so (shared)
 
-CC ?= gcc
-AR ?= ar
-RM ?= rm -rf
+-include config.mk
 
-PREFIX ?= /usr/local
+CC  ?= gcc
+AR  ?= ar
+RM  ?= rm -rf
+
+PREFIX          ?= /usr/local
 LIB_INSTALL_DIR ?= $(PREFIX)/lib
-INCLUDE_INSTALL_DIR ?= $(PREFIX)/include/eclib
+INC_INSTALL_DIR ?= $(PREFIX)/include
 
 BUILD_DIR := build
-OBJ_DIR := $(BUILD_DIR)/obj
-LIB_DIR := lib
+OBJ_DIR   := $(BUILD_DIR)/obj
+LIB_DIR   := lib
 
-CFLAGS ?= -O2 -Wall -Wextra -fPIC -Iinclude -I"$(HOME)/kernel/include"
-LDLIBS ?= -pthread
-CFLAGS += -pthread
+CFLAGS ?= -O2 -Wall -Wextra -fPIC -Iinclude
+LDLIBS ?=
 
-# set DEBUG=1 to build with -g -O0
 ifeq ($(DEBUG),1)
-CFLAGS := -g -O0 -Wall -Iinclude -I~/kernel/include # Or your path to kernel headers
+CFLAGS := -g -O0 -Wall -Iinclude
 endif
 
-# Add ebts/printkit.c to the source files
 SRCS := $(shell find src -type f -name '*.c' 2>/dev/null)
 OBJS := $(patsubst src/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 TARGET_STATIC := $(LIB_DIR)/libeclib.a
 TARGET_SHARED := $(LIB_DIR)/libeclib.so
 
-.PHONY: all static shared clean install uninstall
+.PHONY: all static shared clean install uninstall config
 
 all: static
 
@@ -39,14 +38,12 @@ $(TARGET_STATIC): $(OBJS) | $(LIB_DIR)
 	@echo "Creating static library $@"
 	$(AR) rcs $@ $(OBJS)
 
-shared: CFLAGS += -fPIC
 shared: $(TARGET_SHARED)
 
 $(TARGET_SHARED): $(OBJS) | $(LIB_DIR)
 	@echo "Creating shared library $@"
 	$(CC) -shared -o $@ $(OBJS) $(LDLIBS)
 
-# compile rule: create necessary dirs automatically
 $(OBJ_DIR)/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -54,28 +51,25 @@ $(OBJ_DIR)/%.o: src/%.c
 $(LIB_DIR):
 	@mkdir -p $@
 
-# Ensure the include directory for ebts is added
-CFLAGS += -Iinclude/ebts
-
 install: all
-	@echo "Installing to $(DESTDIR)$(LIB_INSTALL_DIR) and $(DESTDIR)$(INCLUDE_INSTALL_DIR)"
-	@mkdir -p $(DESTDIR)$(LIB_INSTALL_DIR)
-	@mkdir -p $(DESTDIR)$(INCLUDE_INSTALL_DIR)
-	@cp -a $(TARGET_STATIC) $(DESTDIR)$(LIB_INSTALL_DIR)/
-	@cp -a include/* $(DESTDIR)$(INCLUDE_INSTALL_DIR)/
-
-	@echo "Installing headers to $(INCLUDE_INSTALL_DIR)"
-	install -d $(INCLUDE_INSTALL_DIR)
-	install -m 644 include/eclib/*.h $(INCLUDE_INSTALL_DIR)
-	install -m 644 include/ebts/*.h $(INCLUDE_INSTALL_DIR)/../ebts
-	@echo "Installing libraries to $(LIB_INSTALL_DIR)"
-	install -d $(LIB_INSTALL_DIR)
-	install -m 644 $(TARGET_STATIC) $(LIB_INSTALL_DIR)
+	install -d $(DESTDIR)$(LIB_INSTALL_DIR)
+	install -d $(DESTDIR)$(INC_INSTALL_DIR)/eclib
+	install -m 644 $(TARGET_STATIC) $(DESTDIR)$(LIB_INSTALL_DIR)/
+	install -m 644 include/slfd.h   $(DESTDIR)$(INC_INSTALL_DIR)/
+	install -m 644 include/eclib/*.h $(DESTDIR)$(INC_INSTALL_DIR)/eclib/
+	if [ -d include/sys ]; then \
+		install -d $(DESTDIR)$(INC_INSTALL_DIR)/sys; \
+		install -m 644 include/sys/*.h $(DESTDIR)$(INC_INSTALL_DIR)/sys/; \
+	fi
 
 uninstall:
-	@echo "Removing installed files from $(DESTDIR)$(LIB_INSTALL_DIR) and $(DESTDIR)$(INCLUDE_INSTALL_DIR)"
-	@rm -f $(DESTDIR)$(LIB_INSTALL_DIR)/libeclib.a
-	@rm -rf $(DESTDIR)$(INCLUDE_INSTALL_DIR)
+	rm -f  $(DESTDIR)$(LIB_INSTALL_DIR)/libeclib.a
+	rm -f  $(DESTDIR)$(INC_INSTALL_DIR)/slfd.h
+	rm -rf $(DESTDIR)$(INC_INSTALL_DIR)/eclib
+	rm -rf $(DESTDIR)$(INC_INSTALL_DIR)/sys
+
+config:
+	python3 configure
 
 clean:
-	$(RM) -rf $(BUILD_DIR) $(LIB_DIR)
+	rm -rf $(BUILD_DIR) $(LIB_DIR) config.mk

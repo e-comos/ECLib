@@ -10,7 +10,7 @@
  */
 #include "eclib/rui.h" // Corrected include path
 #include "eclib/service.h" // Added for eclib_service_lookup
-#include "eclib/utils.h" // Added for eclib_strncpy
+#include <string.h> // Added for strncpy
 #include "eclib/ipc_message.h"
 #include <string.h> // Added for memcpy
 
@@ -42,7 +42,7 @@ uint32_t eclib_rui_create_window(const rui_point_t* pos, const rui_size_t* size,
     rui_window_create_req_t req;
     req.pos = *pos;
     req.size = *size;
-    eclib_strncpy(req.title, title, sizeof(req.title)-1);
+    strncpy(req.title, title, sizeof(req.title)-1);
     req.title[sizeof(req.title)-1] = '\0';
     req.bg_color = *bg_color;
 
@@ -74,7 +74,7 @@ eclib_err_t eclib_rui_draw_text(uint32_t window_id, const rui_point_t* pos,
     rui_draw_text_req_t req;
     req.window_id = window_id;
     req.pos = *pos;
-    eclib_strncpy(req.text, text, sizeof(req.text)-1);
+    strncpy(req.text, text, sizeof(req.text)-1);
     req.text[sizeof(req.text)-1] = '\0';
     req.color = *color;
     req.font_size = font_size;

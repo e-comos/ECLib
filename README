@@ -1,31 +1,171 @@
 ================================================================
-                      ECLib - E-comOS C Library
-                          Oct , 28 2025
-                       E-comOS Kernel Mode Team
-=================================================================
-The ECLib is a C Library for E-comOS , because E-comOS are not a Unix-Like system , so , something must ourself to created or did.
-EClib is a MAIN REPO for basic link library , some library is createdin other repo such as TGlib
-=================================================================
-How to use it 
------------------------------------------------------------------
-This is ECLib , its means it is installed in your E-comOS , its not support to user cause users cannot use it in thier work.
-If you wannt "When the main process exits, you also want the sub-processin the background not to be killed.",you can use this library such as
-  #include <ipc_message.h>
-  // ... Other code
+                   ECLib - E-comOS C Library
+                   SLFD Specification v10.2
+                   E-comOS Kernel Mode Team & Saladin5101
+================================================================
+
+ECLib is the foundational C library for E-comOS. It implements
+the SLFD (Simple Library Functions Define) interface specification.
+E-comOS is not Unix-like; ECLib provides its own standard library
+and OS interface without depending on POSIX.
+
+----------------------------------------------------------------
+Build
+----------------------------------------------------------------
+
+  # Interactive TUI configuration (requires Python 3 + curses)
+  make config
+
+  # Or build directly with defaults
+  make
+
+  # Debug build
+  make DEBUG=1
+
+  # Shared library
+  make shared
+
+  # Install (default prefix: /usr/local)
+  make install PREFIX=/your/prefix
+
+  # Clean
+  make clean
+
+----------------------------------------------------------------
+Using ECLib in your program
+----------------------------------------------------------------
+
+1. Include the main header:
+
+     #include <slfd.h>
+
+   This gives you all SLFD types, constants, and function prototypes.
+   For ULA privilege macros:
+
+     #include <sys/ula.h>
+
+   For threading:
+
+     #include <sys/thread.h>
+
+2. Link against libeclib.a:
+
+     gcc -Iinclude your_program.c -Llib -leclib -o your_program
+
+----------------------------------------------------------------
+Quick examples
+----------------------------------------------------------------
+
+-- Process management --
+
+  #include <slfd.h>
+
+  pid_t pid = proc_new("n", ULA_MAKE_ATTR(LV_GENERAL, LV_GENERAL, 0, 0));
+  proc_setflags(pid, PROC_IO_READ | PROC_IO_WRITE);
+  parg_t parg = { .argc = 1, .argv = (char*[]){"/bin/myapp", 0}, .envp = 0 };
+  proc_start(pid, "/bin/myapp", &parg);
+
+-- File I/O --
+
+  #include <slfd.h>
+
+  fid_t f = open("f", "r", "/conf/myapp.conf");
+  char buf[256];
+  ssize_t n = read("f", f, buf, sizeof(buf));
+  close("f", f);
+
+-- Network --
+
+  #include <slfd.h>
+
+  fid_t sock = net_connect("tcp", "192.168.1.1:8080");
+  net_send(sock, "hello", 5);
+  char resp[256];
+  net_recv(sock, resp, sizeof(resp));
+  net_disconnect(sock);
+
+-- IPC --
+
+  #include <slfd.h>
+
+  // Send
+  ipc_send_msg(0x1234, 0, target_pid, sizeof(data), data);
+
+  // Receive (blocking)
+  ipc_message_t msg;
+  ipc_receive_msg(&msg, -1);
+
+-- Event multiplexing --
+
+  #include <slfd.h>
+
+  fid_t f1 = open("f", "r", "/tmp/a");
+  fid_t f2 = net_connect("tcp", "127.0.0.1:9000");
+  hear_add(f1, HEAR_IN);
+  hear_add(f2, HEAR_IN);
+
+  struct hear_event ev[4];
+  int n = hear_wait(ev, 4, 1000);
+  for (int i = 0; i < n; i++) {
+      if (ev[i].handle == f1) read("f", f1, buf, sizeof(buf));
+      else                    net_recv(f2, buf, sizeof(buf));
+  }
+
+-- Memory (page allocator) --
+
+  #include <slfd.h>
+
+  void *pages = page_malloc(4);   // 4 * 4096 bytes, zero-filled
+  page_mfree(pages, 4);
+
+-- Threads --
+
+  #include <sys/thread.h>
+
+  void *worker(void *arg) {
+      // ...
+      thread_exit(0);
+  }
+
+  thread_id tid;
+  thread_create(&tid, worker, 0);
+  thread_join(tid, 0);
+
+-- Keep child process alive after parent exits --
+
+  #include <slfd.h>
+
   ipc_do_not_kill_sub();
-This is a exmple for this library's use , and tt also has other functions, such as informing Rui not to keep your app's icon in the dock if your app's uninstaller is deleted, only need
-  #include <rui_messeage.h>
-  // ... Other code
-  rui_delteled_remove_icon();
-IT'S SO EASY
-=================================================================
-How to install it 
------------------------------------------------------------------
-It must installed in your E-comOS , but sometimes , E-comOS it only installed Rust Library , you can
-  epm install eclib
-EPM is worte by rust , so you don't need to care its working
-=================================================================
+
+----------------------------------------------------------------
+Error handling
+----------------------------------------------------------------
+
+All functions return a negative value on failure. The absolute
+value is the error code defined in <slfd.h> (EPERM, ENOENT, etc.).
+errno is also set to the same value on failure.
+
+  fid_t f = open("f", "r", "/conf/missing");
+  if (f < 0) {
+      // f == -ENOENT, errno == ENOENT
+  }
+
+----------------------------------------------------------------
+Directory layout (SLFD FD)
+----------------------------------------------------------------
+
+  /bin      system binaries
+  /dev      device files
+  /conf     configuration (replaces /etc)
+  /usr      user home directories + libraries
+  /lib      shared libraries
+  /tmp      temporary files (cleared on reboot)
+  /sys      kernel/system files
+  /mnt      mount points
+
+----------------------------------------------------------------
 License
------------------------------------------------------------------
-For various reasons, and after weighing the pros and cons, we have ultimately decided to use the GNU LGPL license for open source. However, other libraries may use the GNU GPL or GNU AGPL. The GNU official website does not recommend that any organization or individual use the GNU LGPL.
-=================================================================
+----------------------------------------------------------------
+
+GNU Lesser General Public License v2.1 or later. See LICENSE.
+================================================================

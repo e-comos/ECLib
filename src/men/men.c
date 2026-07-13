@@ -10,7 +10,7 @@
  */
 #include "eclib/error.h"
 #include "eclib/men.h"
-#include "eclib/utils.h"
+#include <string.h>
 #include "eclib/service.h"
 #include "eclib/ipc_message.h"
 // Command codes agreed upon with the memory_manager service
@@ -122,7 +122,7 @@ void* eclib_calloc(size_t nmemb, size_t size) {
 
     void* ptr = eclib_malloc(total_size);
     if (ptr != NULL) {
-        eclib_memset(ptr, 0, total_size);
+        memset(ptr, 0, total_size);
     }
     return ptr;
 }

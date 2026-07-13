@@ -1,5 +1,5 @@
 #include "eclib/start.h"
-#include "eclib/utils.h" 
+#include <string.h> 
 #include "eclib/error.h"
 
 // Define user main
@@ -21,7 +21,7 @@ extern char __stack_end;    // End address of the stack
 void _start(void) {
     // 1. Zero out the BSS segment (uninitialized global variables must be set to 0)
     size_t bss_len = &__bss_end - &__bss_start;
-    eclib_memset(&__bss_start, 0, bss_len);
+    memset(&__bss_start, 0, bss_len);
 
     // 2. Initialize the stack (if the microkernel has not set it, configure manually)
     // ARM architecture: Stack pointer (sp) points to the top of the stack (__stack_end)
