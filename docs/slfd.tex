@@ -127,6 +127,11 @@ struct stat {
     /* other fields implementation-defined */
 };
 
+struct fs_dirent {
+    char d_name[256];
+    uint32_t d_type;
+};
+
 struct utsname {
     char sysname[32];
     char nodename[32];
@@ -221,9 +226,9 @@ Functions return an integer (\texttt{int} or \texttt{ssize\_t}). Negative values
 
 \subsection{Conventions}
 \begin{itemize}
-    \item Strings are null‑terminated.
+    \item Strings are null-terminated.
     \item Passing \texttt{NULL} where not allowed yields \texttt{-EINVAL}.
-    \item File descriptors 0,1,2 are not pre‑opened unless \texttt{<slfd/openstd.h>} is used.
+    \item \textbf{File descriptors 0, 1, and 2 are pre-opened upon process startup. Unless explicitly redirected by the caller, they are mapped to the process's controlling terminal or system console as device types (\texttt{"d"}).} \textit{(Updated in 10.3)}
     \item File attributes are integer bitmasks using ULA macros.
 \end{itemize}
 \section{Process Management}
@@ -479,8 +484,22 @@ off_t io_seek(const char *type, fid_t fid, off_t offset, int whence);
 \end{lstlisting}
 Repositions file offset. \texttt{whence} = \texttt{SEEK\_SET}, \texttt{SEEK\_CUR}, \texttt{SEEK\_END}. Returns new offset or negative error.
 
-\subsection{godir, godir\_byfid, getwd}
-Working directory functions as in version 9.0.
+\subsection{Working Directory Functions}
+
+\begin{verbatim}
+int godir(const char *path);
+\end{verbatim}
+Changes the current working directory to \texttt{path}. Returns 0 on success or negative error.
+
+\begin{verbatim}
+int godir_byfid(const char *type, fid_t fid);
+\end{verbatim}
+Changes the current working directory to the directory matching the open \texttt{fid\_t}. Returns 0 on success or negative error.
+
+\begin{verbatim}
+int getwd(char *buf, size_t size);
+\end{verbatim}
+Copies the absolute path of the current working directory into \texttt{buf} up to \texttt{size} bytes. Returns 0 on success or negative error.
 
 \subsection{pipe}
 \begin{lstlisting}
@@ -490,6 +509,53 @@ Creates a unidirectional pipe. Write end returned; read end automatically transf
 
 \subsection{cpfid, cpfid2, set\_flags, umask}
 Standard descriptor duplication and flag functions.
+
+\section{Extended File System Operations (Added in 10.3)}
+These operations reside in \texttt{<slfd/fs.h>} and interact directly with the file system server.
+
+\subsection{Metadata and Attributes}
+\begin{verbatim}
+int stat(const char *path, struct stat *buf);
+\end{verbatim}
+Retrieves information about the file pointed to by \texttt{path} and populates the \texttt{stat} struct.
+
+\subsection{Directory Creation and Removal}
+\begin{verbatim}
+int mkdir(const char *path, uint32_t attr_mask);
+\end{verbatim}
+Creates a directory named \texttt{path} with the specified ULA attribute mask.
+
+\begin{verbatim}
+int rmdir(const char *path);
+\end{verbatim}
+Removes the directory \texttt{path} (must be empty).
+
+\subsection{Directory Traversal}
+\begin{verbatim}
+fid_t fs_opendir(const char *path);
+\end{verbatim}
+Opens a directory stream and returns a directory descriptor.
+
+\begin{verbatim}
+int fs_readdir(fid_t dir, struct fs_dirent *ent);
+\end{verbatim}
+Reads the next entry from the directory descriptor into \texttt{ent}. Returns 1 on successful read, 0 on end of directory, negative on error.
+
+\begin{verbatim}
+int fs_closedir(fid_t dir);
+\end{verbatim}
+Closes the directory stream.
+
+\subsection{File Manipulation}
+\begin{verbatim}
+int fs_unlink(const char *path);
+\end{verbatim}
+Removes the file or symbolic link at \texttt{path}.
+
+\begin{verbatim}
+int fs_rename(const char *oldpath, const char *newpath);
+\end{verbatim}
+Moves or renames a file from \texttt{oldpath} to \texttt{newpath}.
 
 \section{Network Communications}
 \label{sec:network}
@@ -632,6 +698,7 @@ SLFD provides synchronous message passing between threads. Each thread has a ker
 
 \subsection{System Calls}
 \begin{lstlisting}
+/* It's used for `syscall()`, for user space process, please use ipc_send_msg */
 int sys_ipc_send(thread_id target, ipc_message_t *msg);
 int sys_ipc_receive(ipc_message_t *msg);
 \end{lstlisting}

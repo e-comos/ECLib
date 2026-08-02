@@ -255,4 +255,21 @@ int hear_wait(void *events_out, int max_events, int timeout_ms);
 /* ------------------------------------------------------------------ */
 #include <eclib/thread.h>
 
+/* ------------------------------------------------------------------ */
+/* Extended File System Operations (Section 10.3)                       */
+/* ------------------------------------------------------------------ */
+struct fs_dirent {
+    char d_name[256];
+    uint32_t d_type;
+};
+
+int stat(const char *path, struct stat *buf);
+int mkdir(const char *path, uint32_t attr_mask);
+int rmdir(const char *path);
+fid_t fs_opendir(const char *path);
+int fs_readdir(fid_t dir, struct fs_dirent *ent);
+int fs_closedir(fid_t dir);
+int fs_unlink(const char *path);
+int fs_rename(const char *oldpath, const char *newpath);
+
 #endif /* SLFD_H */
