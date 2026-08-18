@@ -29,6 +29,7 @@ int ipc_send_msg(uint32_t type, uint32_t flags, uint32_t receiver_pid,
     return sys_ipc_send((thread_id)receiver_pid, &msg);
 }
 
+
 int ipc_receive_msg(ipc_message_t *msg, int timeout_ms) {
     if (!msg) return SLFD_ERR(EINVAL);
     (void)timeout_ms;

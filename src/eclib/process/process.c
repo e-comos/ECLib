@@ -4,6 +4,7 @@
  */
 #include <slfd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define PROCESS_SERVICE_PID  2
 #define PROCESS_CMD_NEW      0x2001
@@ -20,15 +21,40 @@
 
 static int proc_call(uint32_t cmd, const void *req, size_t req_len,
                      void *resp, size_t resp_len) {
-    ipc_message_t msg = {0};
-    msg.type   = cmd;
-    msg.target = PROCESS_SERVICE_PID;
-    msg.size   = (req_len > IPC_MAX_DATA_SIZE) ? IPC_MAX_DATA_SIZE : (uint32_t)req_len;
-    if (req && req_len) memcpy(msg.data, req, msg.size);
-    if (sys_ipc_send(PROCESS_SERVICE_PID, &msg) != 0) return SLFD_ERR(EAGAIN);
-    ipc_message_t reply = {0};
-    if (sys_ipc_receive(&reply) != 0) return SLFD_ERR(EAGAIN);
-    if (resp && resp_len) memcpy(resp, reply.data, resp_len);
+    // Allocate message structures on the heap to protect the microkernel stack
+    ipc_message_t *msg = malloc(sizeof(ipc_message_t));
+    if (!msg) return SLFD_ERR(EAGAIN);
+    
+    memset(msg, 0, sizeof(ipc_message_t));
+    msg->type   = cmd;
+    msg->target = PROCESS_SERVICE_PID;
+    msg->size   = (req_len > IPC_MAX_DATA_SIZE) ? IPC_MAX_DATA_SIZE : (uint32_t)req_len;
+    
+    if (req && req_len) {
+        memcpy(msg->data, req, msg->size);
+    }
+    
+    if (sys_ipc_send(PROCESS_SERVICE_PID, msg) != 0) {
+        free(msg);
+        return SLFD_ERR(EAGAIN);
+    }
+    free(msg); // Free request message immediately after sending
+
+    ipc_message_t *reply = malloc(sizeof(ipc_message_t));
+    if (!reply) return SLFD_ERR(EAGAIN);
+    
+    memset(reply, 0, sizeof(ipc_message_t));
+    if (sys_ipc_receive(reply) != 0) {
+        free(reply);
+        return SLFD_ERR(EAGAIN);
+    }
+
+    if (resp && resp_len) {
+        size_t copy_len = (resp_len > reply->size) ? reply->size : resp_len;
+        memcpy(resp, reply->data, copy_len);
+    }
+    
+    free(reply);
     return 0;
 }
 
@@ -89,6 +115,17 @@ int proc_kill(pid_t pid) {
     if (proc_call(PROCESS_CMD_KILL, &pid, sizeof(pid), &err, sizeof(err)) != 0)
         return SLFD_ERR(EAGAIN);
     return err ? -err : 0;
+}
+
+_Noreturn void proc_exit(int status) {
+    ipc_message_t msg = {0};
+    msg.type   = PROCESS_CMD_EXIT;
+    msg.target = PROCESS_SERVICE_PID;
+    msg.size   = sizeof(int);
+    memcpy(msg.data, &status, sizeof(int));
+    
+    sys_ipc_send(PROCESS_SERVICE_PID, &msg);
+    while (1);
 }
 
 int proc_signal_send(pid_t pid, uint32_t signum) {

@@ -55,7 +55,11 @@ install: all
 	install -d $(DESTDIR)$(LIB_INSTALL_DIR)
 	install -d $(DESTDIR)$(INC_INSTALL_DIR)/eclib
 	install -m 644 $(TARGET_STATIC) $(DESTDIR)$(LIB_INSTALL_DIR)/
-	install -m 644 include/slfd.h   $(DESTDIR)$(INC_INSTALL_DIR)/
+	
+	# Install all header files directly inside include/ (stdio.h, string.h, stdint.h, etc.)
+	install -m 644 include/*.h $(DESTDIR)$(INC_INSTALL_DIR)/
+	
+	# Install subdirectory headers
 	install -m 644 include/eclib/*.h $(DESTDIR)$(INC_INSTALL_DIR)/eclib/
 	if [ -d include/sys ]; then \
 		install -d $(DESTDIR)$(INC_INSTALL_DIR)/sys; \
@@ -64,7 +68,8 @@ install: all
 
 uninstall:
 	rm -f  $(DESTDIR)$(LIB_INSTALL_DIR)/libeclib.a
-	rm -f  $(DESTDIR)$(INC_INSTALL_DIR)/slfd.h
+	# Remove all standard header files installed from include/
+	rm -f  $(DESTDIR)$(INC_INSTALL_DIR)/*.h
 	rm -rf $(DESTDIR)$(INC_INSTALL_DIR)/eclib
 	rm -rf $(DESTDIR)$(INC_INSTALL_DIR)/sys
 

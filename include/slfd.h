@@ -179,6 +179,7 @@ int   proc_setflags(pid_t pid, uint32_t flags);
 int   proc_start(pid_t pid, const char *path, const parg_t *parg);
 _Noreturn void proc_terminate(void);
 int   proc_kill(pid_t pid);
+_Noreturn void proc_exit(int status);
 int   proc_signal_send(pid_t pid, uint32_t signum);
 pid_t proc_getpid(void);
 pid_t proc_getppid(void);
