@@ -77,4 +77,6 @@ config:
 	python3 configure
 
 clean:
-	rm -rf $(BUILD_DIR) $(LIB_DIR) config.mk
+	# Keep config.mk intact: it contains the freestanding, builtin-disabling
+	# flags required to prevent GCC from optimizing away custom libc routines.
+	rm -rf $(BUILD_DIR) $(LIB_DIR)

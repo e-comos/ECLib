@@ -1,6 +1,19 @@
 /*
  * ECLib - E-comOS C Library
- * SLFD v10.2 - IPC
+ * Copyright (C) 2025, 2026 Junhao Ding(@Saladin5101)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <slfd.h>
 #include <syscall.h>
@@ -10,11 +23,11 @@
 #define _SYS_IPC_RECEIVE 2
 
 int sys_ipc_send(thread_id target, ipc_message_t *msg) {
-    return (int)syscall(_SYS_IPC_SEND, (long)target, (long)msg, 0, 0, 0, 0);
+    return (int)syscall(_SYS_IPC_SEND, (long)target, (long)msg);
 }
 
 int sys_ipc_receive(ipc_message_t *msg) {
-    return (int)syscall(_SYS_IPC_RECEIVE, (long)msg, 0, 0, 0, 0, 0);
+    return (int)syscall(_SYS_IPC_RECEIVE, (long)msg);
 }
 
 int ipc_send_msg(uint32_t type, uint32_t flags, uint32_t receiver_pid,
