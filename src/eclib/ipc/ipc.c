@@ -34,7 +34,16 @@ int ipc_send_msg(uint32_t type, uint32_t flags, uint32_t receiver_pid,
                  uint32_t data_len, const void *data) {
     ipc_message_t msg = {0};
     msg.type     = type;
-    msg.source   = (uint32_t)proc_getpid();
+    /* Do not call proc_getpid() here: it performs a synchronous IPC round
+     * trip to PROCESS_SERVICE_PID and blocks until a reply arrives.  Nothing
+     * in E-comOS answers that request yet, so ipc_send_msg() never got as far
+     * as sending the real message (and when called by the process that owns
+     * PROCESS_SERVICE_PID it just read its own request back).
+     *
+     * The kernel already stamps the real sender id onto every queued message
+     * (ipc_send(): copy->source = current thread id), so the field can be
+     * left zero here. */
+    msg.source   = 0;
     msg.target   = receiver_pid;
     msg.size     = data_len > IPC_MAX_DATA_SIZE ? IPC_MAX_DATA_SIZE : data_len;
     msg.sequence = flags;
